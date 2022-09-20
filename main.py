@@ -30,13 +30,13 @@ class finder:
         self.mask = _mask
         self.colourMask = _colourMask
 
-    def findPathPix(self, _start, _end, _show=True):
+    def findPathPix(self, _start, _end, _show=True, _logging=True):
         if self.colourMask is None or self.mask is None:
             raise ValueError("colourMask or mask cannot be none")
-        _path, _runs = core.pathFind(self.mapImg, self.colourMask, self.mask, _start, _end, show=_show)
+        _path, _runs = core.pathFind(self.mapImg, self.colourMask, self.mask, _start, _end, show=_show, logging=_logging)
 
-    def findPathCord(self, _start, _end, _show=True):
-        _path, _runs = core.pathFind(self.mapImg, self.colourMask, self.mask, _start, _end, show=_show)
+    def findPathCord(self, _start, _end, _show=True, _logging=True):
+        _path, _runs = core.pathFind(self.mapImg, self.colourMask, self.mask, _start, _end, show=_show, logging=_logging)
 
 
 if __name__ == "__main__":

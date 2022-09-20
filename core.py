@@ -2,12 +2,10 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
-from pathfinding.core.diagonal_movement import DiagonalMovement
-from pathfinding.core.grid import Grid
-from pathfinding.finder import a_star
 import luadata
 import json
 import _pathFinding
+import cv2
 
 
 def NormalizeData(data, scale=255):
@@ -35,29 +33,77 @@ def create_circular_mask(h, w, center=None, radius=None, strength=1):
     return dist_from_center
 
 
-def pathFind(img, colourMask, mask, _start, _end, maxDangerLevel=0, show=True):
-    startTime = time.time()
-    # if mask[_start[1]][_start[0]] != 0:
-    #     raise ValueError("Start point not valid: {}".format(_start))
-    # if mask[_end[1]][_end[0]] != 0:
-    #     raise ValueError("End point not valid: {}".format(_end))
+def slope(x1, y1, x2, y2):
+    if x2 - x1 != 0:
+        return (y2 - y1) / (x2 - x1)
+    else:
+        return float("inf")
 
-    grid = Grid(matrix=mask <= maxDangerLevel)
-    start = grid.node(_start[0], _start[1])
-    end = grid.node(_end[0], _end[1])
+def compressPath(x_cords, y_cords):
+    yield [x_cords[0], y_cords[0]]
+    grad = None
+    prev0 = None
+    prev1 = None
+    for points in zip(x_cords, y_cords):
+        if grad is not None:
+            prev2 = points
+            _temp = slope(*prev1, *prev2)
+            grad = slope(*prev0, *prev1)
 
-    finder = a_star.AStarFinder(diagonal_movement=DiagonalMovement.always)
-    path, runs = finder.find_path(start, end, grid)
+            prev0 = prev1
+            prev1 = prev2
+            if _temp == grad:
+                continue
+            else:
+                yield prev0
+        if prev0 is None:
+            prev0 = points
+            continue
+        if prev0 is not None:
+            grad = slope(*prev0, *points)
+            prev1 = points
+    yield [x_cords[-1], y_cords[-1]]
 
-    print("It took {:.2f} seconds to complete the path finding".format(time.time() - startTime))
+
+def doubleCompress(x_cords, y_cords):
+    pass
+
+
+def pathFind(img, colourMask, _mask, _start, _end, scaler=10, maxDangerLevel=0, show=True, logging=False):
+    logging = time.time() if logging else logging
+
+    scaleTuple = lambda tup, sc: tuple(int(_x/sc) for _x in tup)
+    scaleArr = lambda _arr, sc: [_x*sc for _x in _arr]
+
+    mask = cv2.resize(_mask, dsize=(round(_mask.shape[1]/scaler), round(_mask.shape[0]/scaler)), interpolation=cv2.INTER_NEAREST)
+    mask = mask > maxDangerLevel
+
+    y_coords, x_coords = _pathFinding.pathFind(scaleTuple(_start[::-1], scaler), scaleTuple(_end[::-1], scaler), mask, show=False)
+
+    # path compression
+    x_coords = scaleArr(x_coords, scaler)
+    y_coords = scaleArr(y_coords, scaler)
+    coords_len = len(x_coords)
+    # optimise path
+    points = list(compressPath(x_coords, y_coords))
+    if logging:
+        print("It took {:.3f} seconds to complete the path finding".format(time.time() - logging))
+        print("Number of nodes reduced\n{} -> {}\nThats a compression ratio of {}%".format(coords_len, len(points), int(100 * (coords_len - len(points))/coords_len)))
+
+    x_coords = []
+    y_coords = []
+    for point in points:
+        x_coords.append(point[0])
+        y_coords.append(point[1])
+
     if not show:
-        return path, runs
+        return x_coords, y_coords
 
     fig, ax = plt.subplots(2)
 
     ax[0].imshow(img)
     ax[0].imshow(colourMask, alpha=0.7)
-    ax[1].imshow(mask <= maxDangerLevel)
+    ax[1].imshow(_mask > maxDangerLevel)
 
     ax[0].scatter(_start[0], _start[1], marker="*", color="yellow", s=200)
     ax[1].scatter(_start[0], _start[1], marker="*", color="yellow", s=200)
@@ -65,20 +111,12 @@ def pathFind(img, colourMask, mask, _start, _end, maxDangerLevel=0, show=True):
     ax[0].scatter(_end[0], _end[1], marker="*", color="red", s=200)
     ax[1].scatter(_end[0], _end[1], marker="*", color="red", s=200)
 
-    # extract x and y coordinates from route list
-    x_coords = []
-    y_coords = []
-
-    for step in path:
-        x_coords.append(step[0])
-        y_coords.append(step[1])
-
     ax[0].plot(x_coords, y_coords, color="black")
     ax[1].plot(x_coords, y_coords, color="black")
 
     plt.show()
 
-    return path, runs
+    return x_coords, y_coords
 
 
 def genColourMask(mask):
@@ -128,12 +166,8 @@ if __name__ == "__main__":
             mask = create_circular_mask(*img.shape[:2], center=obj[:2], radius=obj[2], strength=1)
         else:
             mask += create_circular_mask(*img.shape[:2], center=obj[:2], radius=obj[2], strength=1)
-    #
-    # h, w = img.shape[:2]
-    # mask = create_circular_mask(h, w, radius=100, strength=1)
 
     mask[mask > 1] = 1
-
     colourMask = genColourMask(mask)
 
     # fig, ax = plt.subplots(2)
@@ -143,20 +177,35 @@ if __name__ == "__main__":
     # ax[1].imshow(mask)
     # ax[1].title.set_text("1")
     # plt.show()
-
-    # plt.imshow(img)
-    # plt.imshow(colourMask, alpha=0.5)
+    #
+    # plt.imshow(img, extent=[-744878, 744878, -339322, 245600])
+    # plt.imshow(colourMask, extent=[-744878, 744878, -339322, 245600], alpha=0.5)
     # plt.show()
 
-    # _start = (1015, 606)
-    # _end = (1156, 318)
+    # exit(0)
+
+    # for visualisation #
+    # from astar import main
+    # B = np.argwhere(mask)
+    # (ystart, xstart), (ystop, xstop) = B.min(0), B.max(0) + 1
+    # Atrim = mask[ystart:ystop, xstart:xstop]
+    # _max = max(ystop - ystart, xstop - xstart)
+    # _zeros = np.zeros((_max, _max))
+    # _zeros[0:Atrim.shape[0], 0:Atrim.shape[1]] = Atrim
+    # main(list(_zeros), _max)
+    # exit(0)
+
     _start = (1265, 217)
     _end = (1160, 746)
 
-    start = time.time()
-    path, runs = pathFind(img, colourMask, mask, _start, _end, show=False)
-    print("that took: {} seconds".format(round(time.time() - start, 1)))
-
-    start = time.time()
-    _pathFinding.pathFind(list(_start), list(_end), mask >= 0, show=False)
-    print("that took: {} seconds".format(round(time.time() - start, 1)))
+    test = False
+    if test:
+        times = 0
+        runs = 100
+        for x in range(runs):
+            start = time.time()
+            pathFind(img, colourMask, mask, _start, _end, maxDangerLevel=0.1)
+            times += time.time() - start
+        print("100 runs took on average: {:.4f} seconds".format(times/runs))
+    else:
+        pathFind(img, colourMask, mask, _start, _end, show=True)
