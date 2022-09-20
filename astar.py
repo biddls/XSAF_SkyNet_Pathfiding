@@ -1,5 +1,11 @@
+import json
+
+import luadata
 import pygame
-import math
+from matplotlib import image as mpimg
+
+import core
+import numpy as np
 from queue import PriorityQueue
 
 pygame.display.set_caption("A* Path Finding Algorithm")
@@ -243,4 +249,27 @@ def main(grid, ROWS):
 
 	pygame.quit()
 
-# main(WIN, WIDTH, grid)
+if __name__ == "__main__":
+	# todo: prolly never fix
+	img = mpimg.imread('pocmap.png')
+	data = json.loads(json.dumps(luadata.read("test.lua", encoding="utf-8"), indent=4))
+	scaler = core.calcScale(img)
+	mask = None
+	for objKey in data.keys():
+		obj = [*data[objKey].values()]
+		obj = core.cordToPix(img, *obj, scaler)
+		if mask is None:
+			mask = core.create_circular_mask(*img.shape[:2], center=obj[:2], radius=obj[2], strength=1)
+		else:
+			mask += core.create_circular_mask(*img.shape[:2], center=obj[:2], radius=obj[2], strength=1)
+
+	mask[mask > 1] = 1
+
+	# for visualisation #
+	B = np.argwhere(mask)
+	(ystart, xstart), (ystop, xstop) = B.min(0), B.max(0) + 1
+	Atrim = mask[ystart:ystop, xstart:xstop]
+	_max = max(ystop - ystart, xstop - xstart)
+	_zeros = np.zeros((_max, _max))
+	_zeros[0:Atrim.shape[0], 0:Atrim.shape[1]] = Atrim
+	main(list(_zeros), _max)

@@ -105,8 +105,8 @@ def pathFind(img, colourMask, _mask, _start, _end, scaler=10, maxDangerLevel=0, 
     ax[0].imshow(colourMask, alpha=0.7)
     ax[1].imshow(_mask > maxDangerLevel)
 
-    ax[0].scatter(_start[0], _start[1], marker="*", color="yellow", s=200)
-    ax[1].scatter(_start[0], _start[1], marker="*", color="yellow", s=200)
+    ax[0].scatter(_start[0], _start[1], marker="*", color="blue", s=200)
+    ax[1].scatter(_start[0], _start[1], marker="*", color="blue", s=200)
 
     ax[0].scatter(_end[0], _end[1], marker="*", color="red", s=200)
     ax[1].scatter(_end[0], _end[1], marker="*", color="red", s=200)
@@ -153,8 +153,22 @@ def calcScale(canvas, xRng=(-744878, 744878), yRng=(-339322, 245600)):
     return canvasDist / mapDist
 
 
-if __name__ == "__main__":
+def plots(_img, _colourMask, _mask, _maskMap=True):
+    if _maskMap:
+        fig, ax = plt.subplots(2)
+        ax[0].imshow(_img, extent=[-744878, 744878, -339322, 245600])
+        ax[0].imshow(_colourMask, extent=[-744878, 744878, -339322, 245600], alpha=0.5)
+        ax[0].title.set_text("0")
+        ax[1].imshow(_mask)
+        ax[1].title.set_text("1")
+    else:
+        plt.imshow(_img, extent=[-744878, 744878, -339322, 245600])
+        plt.imshow(_colourMask, extent=[-744878, 744878, -339322, 245600], alpha=0.5)
 
+    plt.show()
+
+
+if __name__ == "__main__":
     img = mpimg.imread('pocmap.png')
     data = json.loads(json.dumps(luadata.read("test.lua", encoding="utf-8"), indent=4))
     scaler = calcScale(img)
@@ -170,30 +184,7 @@ if __name__ == "__main__":
     mask[mask > 1] = 1
     colourMask = genColourMask(mask)
 
-    # fig, ax = plt.subplots(2)
-    # ax[0].imshow(img, extent=[-744878, 744878, -339322, 245600])
-    # ax[0].imshow(colourMask, extent=[-744878, 744878, -339322, 245600], alpha=0.5)
-    # ax[0].title.set_text("0")
-    # ax[1].imshow(mask)
-    # ax[1].title.set_text("1")
-    # plt.show()
-    #
-    # plt.imshow(img, extent=[-744878, 744878, -339322, 245600])
-    # plt.imshow(colourMask, extent=[-744878, 744878, -339322, 245600], alpha=0.5)
-    # plt.show()
-
-    # exit(0)
-
-    # for visualisation #
-    # from astar import main
-    # B = np.argwhere(mask)
-    # (ystart, xstart), (ystop, xstop) = B.min(0), B.max(0) + 1
-    # Atrim = mask[ystart:ystop, xstart:xstop]
-    # _max = max(ystop - ystart, xstop - xstart)
-    # _zeros = np.zeros((_max, _max))
-    # _zeros[0:Atrim.shape[0], 0:Atrim.shape[1]] = Atrim
-    # main(list(_zeros), _max)
-    # exit(0)
+    # plots(img, colourMask, mask)
 
     _start = (1265, 217)
     _end = (1160, 746)
