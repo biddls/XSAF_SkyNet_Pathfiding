@@ -1,9 +1,10 @@
 import numpy as np
 import heapq
 import matplotlib.pyplot as plt
+from numba import jit
 
 
-def pathFind(start, goal, grid, show=True):
+def pathFind(start, goal, grid):
     route = astar(grid, start, goal)
     route = route + [start]
     route = route[::-1]
@@ -23,7 +24,7 @@ def pathFind(start, goal, grid, show=True):
 def heuristic(a, b):
     return np.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
 
-
+# @jit(nopython=True)
 def astar(array, start, goal):
     neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
 
