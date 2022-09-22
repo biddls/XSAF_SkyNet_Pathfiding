@@ -7,7 +7,7 @@ import numpy as np
 import luadata
 import json
 
-from numba import jit
+from numba import jit, prange
 
 import _pathFinding
 import cv2
@@ -22,9 +22,10 @@ def NormalizeData(data, scale=255):
         raise ValueError("Scale has to be greater than 0")
 
 
-def create_circular_mask(Y, X, center, radius, strength):
-    dist_from_center = (radius - np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)) / radius
-    dist_from_center[dist_from_center < 0] = 0
+@jit(nopython=True, nogil=True)
+def create_circular_mask(_Y, _X, center, radius, strength):
+    dist_from_center = np.clip((radius - np.sqrt((_X - center[0]) ** 2 + (_Y - center[1]) ** 2)) / radius, 0, radius)
+    # dist_from_center[dist_from_center < 0] = 0
     return strength * dist_from_center
 
 
@@ -66,65 +67,8 @@ def doubleCompress(x_cords, y_cords):
     pass
 
 
-def pathFind(img, _mask, _start, _end, scaler=10, maxDangerLevel=0, show=False, logging=False):
-    logging = time.time() if logging else logging
-
-    scaleTuple = lambda tup, sc: tuple(int(_x / sc) for _x in tup)
-    scaleArr = lambda _arr, sc: [_x * sc for _x in _arr]
-
-    mask = cv2.resize(_mask, dsize=(round(_mask.shape[1] / scaler), round(_mask.shape[0] / scaler)),
-                      interpolation=cv2.INTER_NEAREST)
-    mask = mask > maxDangerLevel
-
-    y_coords, x_coords = _pathFinding.pathFind(scaleTuple(_start[::-1], scaler), scaleTuple(_end[::-1], scaler), mask)
-
-    # path compression
-    x_coords = scaleArr(x_coords, scaler)
-    y_coords = scaleArr(y_coords, scaler)
-
-    # optimise path
-    coords_len = len(x_coords)
-    points = list(compressPath(x_coords, y_coords))
-    if logging:
-        print("It took {:.3f} seconds to complete the path finding".format(time.time() - logging))
-        print("Number of nodes reduced\n{} -> {}\nThats a compression ratio of {}%".format(coords_len, len(points),
-                                                                                           int(100 * (coords_len - len(
-                                                                                               points)) / coords_len)))
-
-    x_coords = []
-    y_coords = []
-    for point in points:
-        x_coords.append(point[0])
-        y_coords.append(point[1])
-
-    if not show:
-        return x_coords, y_coords
-
-    fig, ax = plt.subplots(2)
-
-    ax[0].imshow(img)
-    alphas = np.clip(np.abs(_mask), 0, 1)
-    cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue", "red"])
-    c = ax[0].pcolormesh(_mask, cmap=cmap, vmin=-1, vmax=1, rasterized=True, alpha=alphas)
-    plt.colorbar(c, ax=ax[0])
-    ax[0].contour(_mask[::1], levels=[-.0001, .0001], colors='green', linestyles='dashed', linewidths=1)
-
-    ax[1].imshow(_mask > maxDangerLevel)
-
-    ax[0].scatter(_start[0], _start[1], marker="*", color="blue", s=200)
-    ax[1].scatter(_start[0], _start[1], marker="*", color="blue", s=200)
-
-    ax[0].scatter(_end[0], _end[1], marker="*", color="red", s=200)
-    ax[1].scatter(_end[0], _end[1], marker="*", color="red", s=200)
-
-    ax[0].plot(x_coords, y_coords, color="black")
-    ax[1].plot(x_coords, y_coords, color="black")
-
-    # plt.savefig('map.png', dpi=1000)
-
-    plt.show()
-
-    return x_coords, y_coords
+def pathFind(_mask, _start, _end, maxDangerLevel=0, logging=False):
+    return _pathFinding.pathFind(_start, _end[::-1], _mask > maxDangerLevel, _pathFinding.astar, trackSteps=logging)
 
 
 @jit(nopython=True)
@@ -145,16 +89,12 @@ def genColourMask(mask):
 # int(_canvasShape[d] * (d - dRng[0]) / (dRng[1] - dRng[0]))
 # self.scaler=0.0014772583309862865
 # self.mapImg.shape[:2]=(866, 2200)
+
 @jit(nopython=True)
 def cordToPix(_x, _y, _range):
     _x = int((_x + 744878) / 677.16)
     _y = int((_y + 339322) / 675.43)
     return _x, _y, int(_range * 0.0014772)
-
-
-@jit(nopython=True)
-def scaleRange(_range, _scaler=1):
-    return int(_range * _scaler)
 
 
 def calcScale(canvas, xRng=(-744878, 744878), yRng=(-339322, 245600)):

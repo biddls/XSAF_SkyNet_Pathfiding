@@ -252,7 +252,7 @@ def main(grid, ROWS):
 if __name__ == "__main__":
 	# todo: prolly never fix
 	img = mpimg.imread('pocmap.png')
-	data = json.loads(json.dumps(luadata.read("test.lua", encoding="utf-8"), indent=4))
+	data = json.loads(json.dumps(luadata.read("../test.lua", encoding="utf-8"), indent=4))
 	scaler = core.calcScale(img)
 	mask = None
 	for objKey in data.keys():
