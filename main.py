@@ -38,6 +38,7 @@ class finder:
             self.mask = _mask
             self.optMask = cv2.resize(_mask, dsize=(round(_mask.shape[1] / self.scale), round(_mask.shape[0] / self.scale)),
                       interpolation=cv2.INTER_NEAREST)
+            np.save("optMask", self.optMask)
 
     # def findPathPix(self, _start, _end, _show=False, _logging=False):
     #     if self.mask is None:
@@ -105,6 +106,17 @@ class finder:
         plt.show()
 
         return x_coords, y_coords, _steps
+
+
+def findPathAlone(start, end, _scale=10, maxDangerLevel=1):
+    _arr = np.zeros((2, 2))
+    _arr[0] = np.array(start)
+    _arr[1] = np.array(end)
+    optMask = np.load("optMask.npy")
+    _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-744878, 744878), (0, 2200)), _scale).astype(int))
+    _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 245600), (0, 866)), _scale).astype(int))
+
+    return core.pathFind(optMask, _start, _end)
 
 
 if __name__ == "__main__":
