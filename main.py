@@ -112,6 +112,7 @@ def findPathAlone(start, end, _scale=10, maxDangerLevel=1):
     _arr = np.zeros((2, 2))
     _arr[0] = np.array(start)
     _arr[1] = np.array(end)
+    print(_arr)
     optMask = np.load("optMask.npy")
     _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-744878, 744878), (0, 2200)), _scale).astype(int))
     _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 245600), (0, 866)), _scale).astype(int))
@@ -122,8 +123,12 @@ def findPathAlone(start, end, _scale=10, maxDangerLevel=1):
 if __name__ == "__main__":
     _finder = finder("pocmap.png")
     _finder.newData("test.lua")
-    arr = np.array([[-743000, -100000], [743000, -100000]])
-    _finder.findPathCord(arr, _show=False, _logging=False)
+    # start = (-743000, -100000)
+    # end = (743000, -100000)
+    # findPathAlone(start, end)
+    for x in tqdm(range(30), desc="Path finding"):
+        arr = np.array([[-743000, -100000], [743000, -100000]])
+        _finder.findPathCord(arr, _show=False, _logging=False)
 
     # for x in tqdm(range(30), desc="Path finding pix"):
     #     # _finder.findPathPix((1265, 217), (1160, 746))
