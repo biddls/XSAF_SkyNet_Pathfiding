@@ -14,6 +14,10 @@ from animation import start
 import lua_message_class
 
 
+def rotate_vec(x, y, theta=1):
+    return int(x * np.cos(theta) - y * np.sin(theta)), int(x * np.sin(theta) + y * np.cos(theta))
+
+
 class finder:
     def __init__(self, _mapImg, _file=None):
         self.mask = None
@@ -28,12 +32,13 @@ class finder:
             _shape = self.mapImg.shape
             _mask = np.zeros(_shape[:2], dtype=np.float64)
             Y, X = np.ogrid[:_shape[0], :_shape[1]]
-            _data = json.loads(json.dumps(luadata.read(_file, encoding="utf-8"), indent=4))
+            _data = _file
 
             _start = time.time()
             for _objKey in _data.keys():
                 _obj = [*_data[_objKey].values()]
                 _obj = core.cordToPix(_obj[0], _obj[1], _obj[2])
+                _obj = (_obj[0], 866-_obj[1], _obj[2])
                 _mask += core.create_circular_mask(Y, X, _obj[:2], _obj[2], 1)
 
             if _logging:
@@ -64,33 +69,39 @@ class finder:
         _start = core.cordToPix(_arr[0][1], _arr[0][0], 10)
         _end = core.cordToPix(_arr[1][1], _arr[1][0], 10)
 
-        _start = (_start[0], _start[1])
-        _end = (_end[0], _end[1])
+        _start = (_start[0], 866-_start[1])
+        _end = (_end[0], 866-_end[1])
 
         x_coords, y_coords, _steps = core.pathFind(self.optMask, _start, _end, logging=_logging)
-
+        #
         if y_coords is None:
+            print("NO PATH")
             return False, None, None
-
-        # de-compress path
-        x_coords = np.array(x_coords) * self.scale
-        y_coords = np.array(y_coords) * self.scale
-
-        # optimise path
+        else:
+            print(f"number of points is {len(y_coords)}")
+        #
+        # # de-compress path
+        # # x_coords = np.array(x_coords) * self.scale
+        # # y_coords = np.array(y_coords) * self.scale
+        x_coords = np.array(x_coords)
+        y_coords = np.array(y_coords)
+        #
+        # # optimise path
         points = list(core.compressPath(x_coords, y_coords))
-        coords_len = len(x_coords)
-        if _logging:
-            print("It took {:.3f} seconds to complete the path finding".format(time.time() - _logging))
-            print("Number of nodes reduced\n{} -> {}\nThats a compression ratio of {}%".format(coords_len, len(points),
-                                                                                               int(100 * (coords_len - len(
-                                                                                                   points)) / coords_len)))
 
+        # coords_len = len(x_coords)
+        # if _logging:
+        #     print("It took {:.3f} seconds to complete the path finding".format(time.time() - _logging))
+        #     print("Number of nodes reduced\n{} -> {}\nThats a compression ratio of {}%".format(coords_len, len(points),
+        #                                                                                        int(100 * (coords_len - len(
+        #                                                                                            points)) / coords_len)))
+        #
         x_coords = []
         y_coords = []
         for point in points:
             x_coords.append(point[0])
             y_coords.append(point[1])
-
+        print(f"number of points is {len(y_coords)}")
         if not _show:
             return x_coords, y_coords, _steps
 
@@ -115,8 +126,9 @@ class finder:
         ax[0].scatter(_end[0], _end[1], marker="*", color="red", s=200)
         ax[1].scatter(_end[0], _end[1], marker="*", color="red", s=200)
         #
-        ax[0].plot(x_coords, y_coords, color="black")
-        ax[1].plot(x_coords, y_coords, color="black")
+        if y_coords is not None:
+            ax[0].plot(x_coords, y_coords, color="black")
+            ax[1].plot(x_coords, y_coords, color="black")
 
         # plt.savefig('map.png', dpi=1000)
 
@@ -138,12 +150,12 @@ def findPathAlone(start, end, _scale=10, maxDangerLevel=1):
 
 
 # if __name__ == "__main__":
-def main_code(start_list, end_list):
+def main_code(start_list: list, end_list: list, threats: dict = {}):
     test = []
     # make new finder class
     _finder = finder("pocmap.png")
     # load new map data
-    _finder.newData("test.lua")
+    _finder.newData(threats)
     # set the from and too for a given path
     # format: [x1, y1], [x2, y2]
     # arr = np.array([[-743000, -100000], [743000, -100000]])
@@ -151,7 +163,7 @@ def main_code(start_list, end_list):
     # call this when ever you want to find a path
     cordX, cordY, path = _finder.findPathCord(arr, _show=False, _logging=False)
 
-    if path is None:
+    if cordY is None:
         return [[0, 0], [0, 0]]
 
     # ignore path
@@ -178,7 +190,7 @@ def main_loop():
     soc = socketserver.TCPServer(("localhost", 3015), lua_message.handle)
     soc.allow_reuse_address = True
     soc.request_queue_size = 10
-    soc.timeout = 2.55
+    soc.timeout = 1.55
 
     while True:
         # check socket for incoming data stream
@@ -187,12 +199,13 @@ def main_loop():
         # check for cached proc requests
         # already json decoded and ready to proc_func
         if lua_message.is_empty() is not True:
-            path_req = lua_message.proc()
-            if path_req:
-                path = main_code(path_req[0], path_req[1])
+            path_req, picture, idx = lua_message.proc()
+            if path_req is not None:
+                path = main_code(path_req[0], path_req[1], picture)
+                print(f"msg proc: {path_req}")
                 if path:
-                    lua_exe.request_stack.append(lua_exe.request_data(path, 123))
-                    print("msg ready")
+                    lua_exe.request_stack.append(lua_exe.request_data(path, idx))
+                    print(f"msg ready: {path}")
 
         elif len(lua_exe.request_stack) > 0:
             try:
@@ -203,6 +216,9 @@ def main_loop():
                 print(ConnectionResetError)
             except ConnectionAbortedError:
                 print(ConnectionAbortedError)
+
+        # else:
+        #     lua_exe.reset_connection()
 
 
 main_loop()

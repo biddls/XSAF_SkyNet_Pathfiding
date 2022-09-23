@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import heapq
 import matplotlib.pyplot as plt
@@ -37,7 +39,7 @@ def astar(array, start, goal, trackSteps):
     while oheap:
         current = heapq.heappop(oheap)[1]
 
-        if current == goal:
+        if current == (goal[1], goal[0]):
             data = []
 
             while current in came_from:
@@ -47,11 +49,11 @@ def astar(array, start, goal, trackSteps):
 
         close_set.add(current)
         for i, j in neighbors:
-            neighbor = current[0] + i, current[1] + j
+            neighbor = (current[0] + i), (current[1] + j)
             tentative_g_score = gscore[current] + heuristic(current, neighbor)
-            if 0 <= neighbor[0] < array.shape[0]:
-                if 0 <= neighbor[1] < array.shape[1]:
-                    if array[neighbor[0]][neighbor[1]] == 1:
+            if 0 <= neighbor[1]/10 < array.shape[0]:
+                if 0 <= neighbor[0]/10 < array.shape[1]:
+                    if array[math.floor(neighbor[1]/10)][math.floor(neighbor[0]/10)] == 1:
                         continue
                 else:
                     continue
@@ -63,7 +65,7 @@ def astar(array, start, goal, trackSteps):
             if tentative_g_score < gscore.get(neighbor, 0) or neighbor not in [i[1] for i in oheap]:
                 came_from[neighbor] = current
                 gscore[neighbor] = tentative_g_score
-                fscore[neighbor] = tentative_g_score + heuristic(neighbor, goal)
+                fscore[neighbor] = tentative_g_score + heuristic(neighbor, (goal[1], goal[0]))
                 heapq.heappush(oheap, (fscore[neighbor], neighbor))
             if trackSteps:
                 steps.append(neighbor)

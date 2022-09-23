@@ -24,7 +24,7 @@ def NormalizeData(data, scale=255):
 
 @jit(nopython=True, nogil=True)
 def create_circular_mask(_Y, _X, center, radius, strength):
-    dist_from_center = np.clip((radius - np.sqrt((_X - center[0]) ** 2 + (_Y - center[1]) ** 2)) / radius, 0, radius)
+    dist_from_center = np.clip((radius - np.sqrt(((center[0] - _X) ** 2) + ((center[1] - _Y) ** 2))) / radius, 0, radius)
     # dist_from_center[dist_from_center < 0] = 0
     return strength * dist_from_center
 
@@ -34,6 +34,10 @@ def slope(x1, y1, x2, y2):
         return (y2 - y1) / (x2 - x1)
     else:
         return float("inf")
+
+
+def get_dist(start, finish):
+    return ((start[0] - finish[0]) ** 2 + (start[1] - finish[1]) ** 2) ** 0.5
 
 
 def compressPath(x_cords, y_cords):
@@ -94,7 +98,7 @@ def genColourMask(mask):
 @jit(nopython=True)
 def cordToPix(_x, _y, _range):
     _x = int((_x + 744878) / 677.16)
-    _y = int((_y + 339322) / 1620.43)
+    _y = int((_y + 339322) / 680.43)
     return _x, _y, int(_range * 0.0014772)
 
 

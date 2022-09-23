@@ -46,24 +46,32 @@ class LuaMessage:
         self.data = b''
 
     def proc(self):
-        ret_list = []
+        ret_list: list = []
+        idx = 0
+        pict: dict = {}
         if len(self.cache) > 0:
             msg = self.cache.pop()
             if isinstance(msg, dict):
                 ret_list.append([int(msg['msg']['from'][0]), int(msg['msg']['from'][1])])
                 ret_list.append([int(msg['msg']['to'][0]), int(msg['msg']['to'][1])])
-                # ret_list.append(msg['msg']['from'])
-                # ret_list.append(msg['msg']['to'])
-                return ret_list
+                if msg['msg']['threats']:
+                    pict = msg['msg']['threats']
+                if msg['idx']:
+                    idx = msg['idx']
+            else:
+                return None, None, None
+
+            return ret_list, pict, idx
 
 
 class LuaExe:
     data_buffer: bytes = b''
-    request_stack = []
-    return_stack = []
-    soc_to = 5.55
+    request_stack: list = []
+    soc_to = 1.55
     sock = socket.create_server(("localhost", 3006), family=socket.AF_INET, backlog=5000)
     sock.settimeout(soc_to)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
     def __init__(self):
         return
@@ -79,9 +87,11 @@ class LuaExe:
         self.sock.close()
         self.sock = socket.create_server(("localhost", 3006), family=socket.AF_INET, backlog=5000)
         self.sock.settimeout(self.soc_to)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 1)
 
     def handle(self):
         if len(self.request_stack) < 1:
+            # self.request_stack: list = None
             return
 
         self.sock.listen(1)
