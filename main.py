@@ -55,11 +55,11 @@ class finder:
 
         # y1, y2, x1, x2 = -745556, 744878, -339322, 244922
 
-        _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), self.scale).astype(int))
-        _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), self.scale).astype(int))
+        # _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), self.scale).astype(int))
+        # _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), self.scale).astype(int))
 
-        # _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-744878, 744878), (0, 2200)), self.scale).astype(int))
-        # _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 245600), (0, 866)), self.scale).astype(int))
+        _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-744878, 744878), (0, 2200)), self.scale).astype(int))
+        _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 245600), (0, 866)), self.scale).astype(int))
 
         x_coords, y_coords, _steps = core.pathFind(self.optMask, _start, _end, logging=_logging)
 

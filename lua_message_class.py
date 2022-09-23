@@ -50,10 +50,10 @@ class LuaMessage:
         if len(self.cache) > 0:
             msg = self.cache.pop()
             if isinstance(msg, dict):
-                # ret_list.append([int(msg['msg']['from'][0]), int(msg['msg']['from'][1])])
-                # ret_list.append([int(msg['msg']['to'][0]), int(msg['msg']['to'][1])])
-                ret_list.append(msg['msg']['from'])
-                ret_list.append(msg['msg']['to'])
+                ret_list.append([int(msg['msg']['from'][0]), int(msg['msg']['from'][1])])
+                ret_list.append([int(msg['msg']['to'][0]), int(msg['msg']['to'][1])])
+                # ret_list.append(msg['msg']['from'])
+                # ret_list.append(msg['msg']['to'])
                 return ret_list
 
 
