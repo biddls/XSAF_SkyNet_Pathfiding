@@ -64,7 +64,7 @@ class finder:
         x_coords, y_coords, _steps = core.pathFind(self.optMask, _start, _end, logging=_logging)
 
         if _steps is None:
-            return False
+            return False, None, None
 
         # de-compress path
         x_coords = np.array(x_coords) * self.scale
@@ -185,7 +185,7 @@ def main_loop():
             if path_req:
                 path = main_code(path_req[0], path_req[1])
                 if path:
-                    lua_exe.request_stack.append(lua_exe.request_data(*path, 123))
+                    lua_exe.request_stack.append(lua_exe.request_data(path, 123))
                     print("msg ready")
 
         elif len(lua_exe.request_stack) > 0:

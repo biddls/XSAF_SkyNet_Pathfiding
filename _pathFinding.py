@@ -6,7 +6,7 @@ from numba import jit
 def pathFind(start, goal, grid, pathFinder, trackSteps=False):
     route, steps = astar(grid, start, goal, trackSteps)
     if isinstance(route, bool):
-        return False
+        return False, None, None
 
     route = (route + [start])[::-1]
 
@@ -68,4 +68,4 @@ def astar(array, start, goal, trackSteps):
             if trackSteps:
                 steps.append(neighbor)
 
-    return False
+    return False, None
