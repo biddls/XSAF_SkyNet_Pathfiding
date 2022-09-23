@@ -67,7 +67,7 @@ class LuaMessage:
 class LuaExe:
     data_buffer: bytes = b''
     request_stack: list = []
-    soc_to = 1.55
+    soc_to = 0.015
     sock = socket.create_server(("localhost", 3006), family=socket.AF_INET, backlog=5000)
     sock.settimeout(soc_to)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 1)
@@ -84,21 +84,29 @@ class LuaExe:
         }
 
     def reset_connection(self):
-        self.sock.close()
-        self.sock = socket.create_server(("localhost", 3006), family=socket.AF_INET, backlog=5000)
-        self.sock.settimeout(self.soc_to)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 1)
+        if self.sock.fileno() > 0:
+            # empty of data, can be reset
+            pass
+        # self.sock.close()
+        # self.sock = socket.create_server(("localhost", 3006), family=socket.AF_INET, backlog=5000)
+        # self.sock.settimeout(self.soc_to)
+        # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 1)
+        # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
     def handle(self):
         if len(self.request_stack) < 1:
             # self.request_stack: list = None
             return
 
-        self.sock.listen(1)
+        self.sock.listen(0)
         # Connect to server and send data
         client, addr = self.sock.accept()
+
+        print(client, addr)
 
         if client is not None:
             print(f"client {client}")
             msg_data = self.request_stack.pop()
+            # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 1)
+            # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             client.sendall(bytes(json.dumps(msg_data), "utf-8"))

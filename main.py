@@ -37,8 +37,8 @@ class finder:
             _start = time.time()
             for _objKey in _data.keys():
                 _obj = [_data[_objKey]['x'], _data[_objKey]['y'], _data[_objKey]['size']]
-                _obj = core.cordToPix(_obj[0], _obj[1], _obj[2])
-                _obj = (_obj[0]*1.095, 866-_obj[1]*0.835, _obj[2])
+                _obj = core.cordToPix(_obj[1], _obj[0], _obj[2])
+                _obj = (_obj[0]*0.965, 866-_obj[1]*0.92, _obj[2])
                 _mask += core.create_circular_mask(Y, X, _obj[:2], _obj[2], 1)
 
             if _logging:
@@ -73,37 +73,39 @@ class finder:
         _end = (_end[0], 866-_end[1])
 
         x_coords, y_coords, _steps = core.pathFind(self.optMask, _start, _end, logging=_logging)
-        #
+
+        # points = []
         if y_coords is None:
             print("NO PATH")
             return False, None, None
         else:
             print(f"number of points is {len(y_coords)}")
-        #
+
         # # de-compress path
         # # x_coords = np.array(x_coords) * self.scale
         # # y_coords = np.array(y_coords) * self.scale
-        x_coords = np.array(x_coords)
-        y_coords = np.array(y_coords)
-        #
-        # # optimise path
-        points = list(core.compressPath(x_coords, y_coords))
-
-        # coords_len = len(x_coords)
+        # x_coords = np.array(x_coords)
+        # y_coords = np.array(y_coords)
+                # # optimise path core.compressPath(
+                # coords_len = len(x_coords)
         # if _logging:
         #     print("It took {:.3f} seconds to complete the path finding".format(time.time() - _logging))
         #     print("Number of nodes reduced\n{} -> {}\nThats a compression ratio of {}%".format(coords_len, len(points),
         #                                                                                        int(100 * (coords_len - len(
         #                                                                                            points)) / coords_len)))
         #
-        x_coords = []
-        y_coords = []
-        for point in points:
-            x_coords.append(point[0])
-            y_coords.append(point[1])
-        print(f"number of points is {len(y_coords)}")
+
+        cx = []
+        cy = []
+        for point in range(len(y_coords)-1):
+            if point % 14 == 0:
+                # 10th the number equally
+                cx.append(x_coords[point])
+                cy.append(y_coords[point])
+        print(f"number of points is {len(cy)}")
+
         # if not _show:
-        #     return x_coords, y_coords, _steps
+        #     return cx, cy, _steps
 
         fig, ax = plt.subplots(2)
 
@@ -127,14 +129,14 @@ class finder:
         ax[1].scatter(_end[0], _end[1], marker="*", color="red", s=200)
         #
         if y_coords is not None:
-            ax[0].plot(x_coords, y_coords, color="black")
-            ax[1].plot(x_coords, y_coords, color="black")
+            ax[0].plot(cx, cy, color="black")
+            ax[1].plot(cx, cy, color="black")
 
         # plt.savefig('map.png', dpi=1000)
 
         plt.show()
 
-        return x_coords, y_coords, _steps
+        return cx, cy, _steps
 
 
 def findPathAlone(start, end, _scale=10, maxDangerLevel=1):
@@ -190,7 +192,7 @@ def main_loop():
     soc = socketserver.TCPServer(("localhost", 3015), lua_message.handle)
     soc.allow_reuse_address = True
     soc.request_queue_size = 10
-    soc.timeout = 1.55
+    soc.timeout = 0.15
 
     while True:
         # check socket for incoming data stream
@@ -217,8 +219,8 @@ def main_loop():
             except ConnectionAbortedError:
                 print(ConnectionAbortedError)
 
-        # else:
-        #     lua_exe.reset_connection()
+        else:
+            lua_exe.reset_connection()
 
 
 main_loop()
