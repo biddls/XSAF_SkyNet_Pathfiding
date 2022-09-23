@@ -28,7 +28,7 @@ class finder:
             self.newData(_file)
 
     def newData(self, _file='', _logging=False):
-        if _file != '':
+        if _file is not None and isinstance(_file, dict):
             _shape = self.mapImg.shape
             _mask = np.zeros(_shape[:2], dtype=np.float64)
             Y, X = np.ogrid[:_shape[0], :_shape[1]]
@@ -36,9 +36,9 @@ class finder:
 
             _start = time.time()
             for _objKey in _data.keys():
-                _obj = [*_data[_objKey].values()]
+                _obj = [_data[_objKey]['x'], _data[_objKey]['y'], _data[_objKey]['size']]
                 _obj = core.cordToPix(_obj[0], _obj[1], _obj[2])
-                _obj = (_obj[0], 866-_obj[1], _obj[2])
+                _obj = (_obj[0]*1.095, 866-_obj[1]*0.835, _obj[2])
                 _mask += core.create_circular_mask(Y, X, _obj[:2], _obj[2], 1)
 
             if _logging:
@@ -102,8 +102,8 @@ class finder:
             x_coords.append(point[0])
             y_coords.append(point[1])
         print(f"number of points is {len(y_coords)}")
-        if not _show:
-            return x_coords, y_coords, _steps
+        # if not _show:
+        #     return x_coords, y_coords, _steps
 
         fig, ax = plt.subplots(2)
 
@@ -116,7 +116,7 @@ class finder:
         c = ax[0].pcolormesh(self.mask, cmap=cmap, vmin=-1, vmax=1, rasterized=True, alpha=alphas)
         plt.colorbar(c, ax=ax[0])
 
-        ax[0].contour(self.mask[::1], levels=[-.0001, .0001], colors='green', linestyles='dashed', linewidths=1)
+        # ax[0].contour(self.mask[::1], levels=[-.0001, .0001], colors='green', linestyles='dashed', linewidths=1)
 
         ax[1].imshow(self.mask > maxDangerLevel)
 

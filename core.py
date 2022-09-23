@@ -99,7 +99,7 @@ def genColourMask(mask):
 def cordToPix(_x, _y, _range):
     _x = int((_x + 744878) / 677.16)
     _y = int((_y + 339322) / 680.43)
-    return _x, _y, int(_range * 0.0014772)
+    return _x, _y, int(_range * 0.0014972)
 
 
 def calcScale(canvas, xRng=(-744878, 744878), yRng=(-339322, 245600)):
