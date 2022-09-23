@@ -25,7 +25,6 @@ def NormalizeData(data, scale=255):
 @jit(nopython=True, nogil=True)
 def create_circular_mask(_Y, _X, center, radius, strength):
     dist_from_center = np.clip((radius - np.sqrt((_X - center[0]) ** 2 + (_Y - center[1]) ** 2)) / radius, 0, radius)
-    # dist_from_center[dist_from_center < 0] = 0
     return strength * dist_from_center
 
 
@@ -68,7 +67,7 @@ def doubleCompress(x_cords, y_cords):
 
 
 def pathFind(_mask, _start, _end, maxDangerLevel=0, logging=False):
-    return _pathFinding.pathFind(_start, _end[::-1], _mask > maxDangerLevel, _pathFinding.astar, trackSteps=logging)
+    return _pathFinding.pathFind(_start, _end[::-1], _mask > maxDangerLevel, _pathFinding.astar)
 
 
 @jit(nopython=True)

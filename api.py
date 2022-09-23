@@ -12,7 +12,7 @@ def pathFind(x1, x2, y1, y2):
     y1 = -int(y1[1:]) if y1[0] == 'n' else int(y1)
     y2 = -int(y2[1:]) if y2[0] == 'n' else int(y2)
     path_x, path_y, steps = _finder.findPathCord(np.array([[x1, y1], [x2, y2]]))
-    # print(path_x, path_y)
+
     return {
                 "pathX": str(path_x),
                 "pathY": str(path_y)
@@ -22,4 +22,4 @@ def pathFind(x1, x2, y1, y2):
 _finder = main.finder("pocmap.png")
 _finder.newData("test.lua")
 
-#uvicorn api:app --reload
+# uvicorn api:app --reload

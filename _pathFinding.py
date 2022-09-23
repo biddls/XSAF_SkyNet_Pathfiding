@@ -1,10 +1,8 @@
 import numpy as np
 import heapq
-import matplotlib.pyplot as plt
-from numba import jit
 
-def pathFind(start, goal, grid, pathFinder, trackSteps=False):
-    route, steps = astar(grid, start, goal, trackSteps)
+def pathFind(start, goal, grid, pathFinder):
+    route = pathFinder(grid, start, goal)
     route = (route + [start])[::-1]
 
     # extract x and y coordinates from route list
@@ -14,13 +12,13 @@ def pathFind(start, goal, grid, pathFinder, trackSteps=False):
         x_coords.append(route[i][0])
         y_coords.append(route[i][1])
 
-    return x_coords, y_coords, steps
+    return x_coords, y_coords
 
 
 def heuristic(a, b):
     return np.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
 
-def astar(array, start, goal, trackSteps):
+def astar(array, start, goal):
     neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
 
     close_set = set()
@@ -29,7 +27,6 @@ def astar(array, start, goal, trackSteps):
     fscore = {start: heuristic(start, goal)}
     oheap = []
     heapq.heappush(oheap, (fscore[start], start))
-    steps = []
     while oheap:
         current = heapq.heappop(oheap)[1]
 
@@ -39,7 +36,7 @@ def astar(array, start, goal, trackSteps):
             while current in came_from:
                 data.append(current)
                 current = came_from[current]
-            return data, steps
+            return data
 
         close_set.add(current)
         for i, j in neighbors:
@@ -61,7 +58,5 @@ def astar(array, start, goal, trackSteps):
                 gscore[neighbor] = tentative_g_score
                 fscore[neighbor] = tentative_g_score + heuristic(neighbor, goal)
                 heapq.heappush(oheap, (fscore[neighbor], neighbor))
-            if trackSteps:
-                steps.append(neighbor)
 
     return False

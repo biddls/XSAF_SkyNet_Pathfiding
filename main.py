@@ -1,6 +1,4 @@
-import heapq
 import time
-
 import cv2
 import matplotlib
 from tqdm import tqdm
@@ -9,7 +7,7 @@ import core
 import json
 import numpy as np
 import luadata
-from animation import start
+
 
 class finder:
     def __init__(self, _mapImg, _file=None):
@@ -53,7 +51,7 @@ class finder:
         _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-744878, 744878), (0, 2200)), self.scale).astype(int))
         _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 245600), (0, 866)), self.scale).astype(int))
 
-        x_coords, y_coords, _steps = core.pathFind(self.optMask, _start, _end, logging=_logging)
+        x_coords, y_coords = core.pathFind(self.optMask, _start, _end, logging=_logging)
 
         # de-compress path
         x_coords = np.array(x_coords) * self.scale
@@ -75,7 +73,7 @@ class finder:
             y_coords.append(point[1])
 
         if not _show:
-            return x_coords, y_coords, _steps
+            return x_coords, y_coords
 
         fig, ax = plt.subplots(2)
 
@@ -105,7 +103,7 @@ class finder:
 
         plt.show()
 
-        return x_coords, y_coords, _steps
+        return x_coords, y_coords
 
 
 def findPathAlone(start, end, _scale=10, maxDangerLevel=1):
@@ -128,7 +126,7 @@ if __name__ == "__main__":
     # findPathAlone(start, end)
     for x in tqdm(range(30), desc="Path finding"):
         arr = np.array([[-743000, -100000], [743000, -100000]])
-        _finder.findPathCord(arr, _show=False, _logging=False)
+        cordX, cordY = _finder.findPathCord(arr, _show=False, _logging=False)
 
     # for x in tqdm(range(30), desc="Path finding pix"):
     #     # _finder.findPathPix((1265, 217), (1160, 746))
