@@ -33,7 +33,7 @@ class finder:
             _start = time.time()
             for _objKey in _data.keys():
                 _obj = [*_data[_objKey].values()]
-                _obj = core.cordToPix(*_obj)
+                _obj = core.cordToPix(_obj[0], _obj[1], _obj[2])
                 _mask += core.create_circular_mask(Y, X, _obj[:2], _obj[2], 1)
 
             if _logging:
@@ -58,12 +58,18 @@ class finder:
         # _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), self.scale).astype(int))
         # _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), self.scale).astype(int))
 
-        _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-744878, 744878), (0, 2200)), self.scale).astype(int))
-        _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 245600), (0, 866)), self.scale).astype(int))
+        # _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-744878, 744878), (0, 2200)), self.scale).astype(int))
+        # _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 245600), (0, 866)), self.scale).astype(int))
+
+        _start = core.cordToPix(_arr[0][1], _arr[0][0], 10)
+        _end = core.cordToPix(_arr[1][1], _arr[1][0], 10)
+
+        _start = (_start[0], _start[1])
+        _end = (_end[0], _end[1])
 
         x_coords, y_coords, _steps = core.pathFind(self.optMask, _start, _end, logging=_logging)
 
-        if _steps is None:
+        if y_coords is None:
             return False, None, None
 
         # de-compress path
@@ -90,7 +96,7 @@ class finder:
 
         fig, ax = plt.subplots(2)
 
-        ax[0].imshow(self.img)
+        ax[0].imshow(self.mapImg)
 
         alphas = np.clip(np.abs(self.mask), 0, 1)
 
@@ -108,7 +114,7 @@ class finder:
 
         ax[0].scatter(_end[0], _end[1], marker="*", color="red", s=200)
         ax[1].scatter(_end[0], _end[1], marker="*", color="red", s=200)
-
+        #
         ax[0].plot(x_coords, y_coords, color="black")
         ax[1].plot(x_coords, y_coords, color="black")
 

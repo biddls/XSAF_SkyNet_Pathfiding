@@ -94,7 +94,7 @@ def genColourMask(mask):
 @jit(nopython=True)
 def cordToPix(_x, _y, _range):
     _x = int((_x + 744878) / 677.16)
-    _y = int((_y + 339322) / 675.43)
+    _y = int((_y + 339322) / 1620.43)
     return _x, _y, int(_range * 0.0014772)
 
 
