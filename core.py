@@ -1,6 +1,7 @@
 import numpy as np
 from numba import jit
 import _pathFinding
+import cv2
 
 
 @jit(nopython=True, nogil=True)

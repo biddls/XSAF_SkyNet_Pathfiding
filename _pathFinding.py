@@ -15,9 +15,9 @@ def pathFind(start, goal, grid, pathFinder, trackSteps=False):
     return route, found
 
 
+
 def heuristic(a, b):
     return np.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
-
 
 def astar(array, start, goal):
     neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
@@ -38,6 +38,7 @@ def astar(array, start, goal):
                 data.append(current)
                 current = came_from[current]
             return data, True
+
 
         close_set.add(current)
         for i, j in neighbors:

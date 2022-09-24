@@ -1,6 +1,5 @@
 import json
 import time
-
 import cv2
 import luadata
 import matplotlib
@@ -8,10 +7,6 @@ from tqdm import tqdm
 from matplotlib import image as mpimg, pyplot as plt
 import core
 import numpy as np
-
-
-def rotate_vec(x, y, theta=1):
-    return int(x * np.cos(theta) - y * np.sin(theta)), int(x * np.sin(theta) + y * np.cos(theta))
 
 
 class finder:
