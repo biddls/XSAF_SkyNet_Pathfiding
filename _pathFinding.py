@@ -1,18 +1,19 @@
+import math
+
 import numpy as np
 import heapq
+import matplotlib.pyplot as plt
+from numba import jit
 
-def pathFind(start, goal, grid, pathFinder):
-    route = pathFinder(grid, start, goal)
-    route = (route + [start])[::-1]
+def pathFind(start, goal, grid, pathFinder, trackSteps=False):
+    route, found = pathFinder(grid, start, goal)
+    if found is False:
+        route = ([start] + [goal])
+    else:
+        route = (route + [start])[::-1]
 
-    # extract x and y coordinates from route list
-    x_coords = []
-    y_coords = []
-    for i in (range(0, len(route))):
-        x_coords.append(route[i][0])
-        y_coords.append(route[i][1])
+    return route, found
 
-    return x_coords, y_coords
 
 
 def heuristic(a, b):
@@ -36,7 +37,8 @@ def astar(array, start, goal):
             while current in came_from:
                 data.append(current)
                 current = came_from[current]
-            return data
+            return data, True
+
 
         close_set.add(current)
         for i, j in neighbors:
@@ -59,4 +61,4 @@ def astar(array, start, goal):
                 fscore[neighbor] = tentative_g_score + heuristic(neighbor, goal)
                 heapq.heappush(oheap, (fscore[neighbor], neighbor))
 
-    return False
+    return [], False
