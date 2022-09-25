@@ -18,7 +18,7 @@ local shallowCopy = jsbFM.shallowCopy
     config = {
       local_host = "localhost",
       allow_picture_cooldown = 1050,
-      manager_timer = 2.05,
+      manager_timer = 1.734,
     },
     ports = {
       aiRouteServer = 3025,
@@ -43,36 +43,46 @@ local shallowCopy = jsbFM.shallowCopy
         -- error
         _log("ASTAR Server bind error (%s)", errtry)
       else
-        _log("ASTAR Server bind OK.")
-        server:settimeout(0.007)
+        _log("ASTAR Server re-bind OK.")
+        server:settimeout(0.0144)
       end
     end
+    
+    -- local ins = require"inspect"
 
     function server_methods:recv()
+      if not server then self:connect() end
       local line, err, msg
-      local client = server:accept()
-      if client then
-        line, err, msg = client:receive()
+      local py_client = server:accept()
+      if py_client then
+        line, err, msg = py_client:receive()
         if msg then
-          server_buffer[#server_buffer+1]  = {JSON:decode(msg)}
+          local data = JSON:decode(msg)
+          server_buffer[#server_buffer+1]  = {
+            idx = data.idx,
+            msg = JSON:decode(data.msg),
+          }; -- stp()
+          -- ins.inspect(server_buffer[#server_buffer])
           module_data.rec_idx = module_data.rec_idx + 1
           _log("ASTAR Recv data from Python for proc")
           return true
+        else
+          _log("ASTAR No Client msg recv (INFO)")
         end
         -- jsb.debug_print("ASTAR", "server rcv", {line, err, msg})
+      -- else
+      --   _log("ASTAR No Client to get from (INFO)")
       end
     end
-
-    local ins = require"inspect"
 
     function server_methods:proc()
       if #server_buffer < 1 then return end
       local xy = {}
       local ret = server_buffer[1]
-      ins.inspect(ret)
       if ret then
-        local idx = tostring(JSON:decode(ret.idx))
-        local msg = JSON:decode(ret.msg or "")
+        local idx = ret.idx
+        local msg = ret.msg
+        -- stp()
         if not msg then
           _log("ASTAR ERROR: No msg in return")
           if #server_buffer > 1 then table.remove(server_buffer, 1) else server_buffer = {} end
@@ -122,14 +132,14 @@ local shallowCopy = jsbFM.shallowCopy
         -- error
         _log("ASTAR Server bind error (%s)", errtry)
       else
-        -- _log("ASTAR Server bind OK.")
-        server:settimeout(0.007)
+        _log("ASTAR Server bind OK.")
+        server:settimeout(0.0135)
       end
     end
     return setmetatable({
       socket = server or {},
     }, {__index = server_methods})
-  end
+  end; setmetatable(aiRouteServer, {__call = function(self) return getServer() end})
 --
 
 -- client socket class
@@ -212,7 +222,7 @@ local shallowCopy = jsbFM.shallowCopy
     return setmetatable({
       socket = client or {},
     }, {__index = client_methods})
-  end
+  end; setmetatable(aiRouteClient, {__call = function(self) return getClient() end})
 --
 
 -- SEND
@@ -248,7 +258,11 @@ aiRoute = {}
     while true do
       -- socket objects
       if #client_buffer > 0 and not Client then Client = getClient() end
-      -- 
+      if not Server then
+        Server = getServer()
+        Server.socket:setoption("tcp-nodelay", true)
+        Server.socket:setoption("keepalive", true)
+      end
       -- Server.socket:close()
       -- proc route requests
         if #client_buffer > 0 and Client:connect() and Client:proc() then
@@ -258,14 +272,12 @@ aiRoute = {}
           else
             _log("ASTAR sent through new request to Python")
           end
-      --
       -- get back results
         elseif #server_buffer > 0 or (module_data.rec_idx ~= module_data.req_idx) then
-          if not Server then Server = getServer() end
           if Server:recv() and Server:proc() then
             _log("ASTAR completed new route")
           end
-          Server.socket:close()
+          -- Server.socket:close()
         end
       --
       coroutine.yield()
@@ -302,5 +314,7 @@ aiRoute.getAPI = function()
     data = function ()
       return module_data, client_buffer, server_buffer
     end,
+    client = aiRouteClient,
+    server = aiRouteServer,
   }
 end
