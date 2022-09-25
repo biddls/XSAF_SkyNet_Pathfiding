@@ -1,18 +1,12 @@
-import heapq
 import socket
 import socketserver
 import time
-
 import cv2
 import matplotlib
-import select
-from tqdm import tqdm
 from matplotlib import image as mpimg, pyplot as plt
 import core
 import json
 import numpy as np
-import luadata
-from animation import start
 import lua_message_class
 
 
@@ -150,17 +144,19 @@ def main_loop():
     soc.allow_reuse_address = True
     soc.request_queue_size = 10
     soc.timeout = 0.45
+    ret_data = 0
 
     while True:
         # check for data to be returned
         if len(lua_message.request_stack) > 0:
-            host = "localhost"  # The server's hostname or IP address
-            port = 3025  # The port used by the server
+            host = "localhost"
+            port = 3025
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(0.029)
+                s.settimeout(0.003)
                 if s.connect_ex((host, port)) < 1:
                     s.sendall(bytes(json.dumps(lua_message.request_stack.pop()), "utf-8"))
-                    print("Data returned to Lua")
+                    ret_data += 1
+                    print(f"Data return no {ret_data} sent to Lua and popped from the stack.")
                     continue
                 else:
                     continue
