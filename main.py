@@ -1,9 +1,11 @@
 import heapq
+import socket
 import socketserver
 import time
 
 import cv2
 import matplotlib
+import select
 from tqdm import tqdm
 from matplotlib import image as mpimg, pyplot as plt
 import core
@@ -14,6 +16,7 @@ from animation import start
 import lua_message_class
 
 
+# unused
 def rotate_vec(x, y, theta=1):
     return int(x * np.cos(theta) - y * np.sin(theta)), int(x * np.sin(theta) + y * np.cos(theta))
 
@@ -48,23 +51,10 @@ class finder:
                       interpolation=cv2.INTER_NEAREST)
             np.save("optMask", self.optMask)
 
-    # def findPathPix(self, _start, _end, _show=False, _logging=False):
-    #     if self.mask is None:
-    #         raise ValueError("Mask not loaded")
-    #     _path, _runs, _steps = core.pathFind(self.optMask, _start, _end, show=_show, logging=_logging)
-    #     # start(X=_steps, _shape=self.mask.shape)
-    #     return _path, _runs, _steps
-
     def findPathCord(self, _arr, _show=False, _logging=False, maxDangerLevel=1):
         _logging = time.time() if _logging else _logging
 
         # y1, y2, x1, x2 = -745556, 744878, -339322, 244922
-
-        # _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), self.scale).astype(int))
-        # _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), self.scale).astype(int))
-
-        # _start = tuple(np.floor_divide(np.interp(_arr[:, 0], (-744878, 744878), (0, 2200)), self.scale).astype(int))
-        # _end = tuple(np.floor_divide(np.interp(_arr[:, 1], (-339322, 245600), (0, 866)), self.scale).astype(int))
 
         _start = core.cordToPix(_arr[0][1], _arr[0][0], 10)
         _end = core.cordToPix(_arr[1][1], _arr[1][0], 10)
@@ -81,20 +71,6 @@ class finder:
         else:
             print(f"number of points is {len(y_coords)}")
 
-        # # de-compress path
-        # # x_coords = np.array(x_coords) * self.scale
-        # # y_coords = np.array(y_coords) * self.scale
-        # x_coords = np.array(x_coords)
-        # y_coords = np.array(y_coords)
-                # # optimise path core.compressPath(
-                # coords_len = len(x_coords)
-        # if _logging:
-        #     print("It took {:.3f} seconds to complete the path finding".format(time.time() - _logging))
-        #     print("Number of nodes reduced\n{} -> {}\nThats a compression ratio of {}%".format(coords_len, len(points),
-        #                                                                                        int(100 * (coords_len - len(
-        #                                                                                            points)) / coords_len)))
-        #
-
         cx = []
         cy = []
         for point in range(len(y_coords)-1):
@@ -104,8 +80,8 @@ class finder:
                 cy.append(y_coords[point])
         print(f"number of points is {len(cy)}")
 
-        # if not _show:
-        #     return cx, cy, _steps
+        if not _show:
+            return cx, cy, _steps
 
         fig, ax = plt.subplots(2)
 
@@ -139,6 +115,7 @@ class finder:
         return cx, cy, _steps
 
 
+# unused
 def findPathAlone(start, end, _scale=10, maxDangerLevel=1):
     _arr = np.zeros((2, 2))
     _arr[0] = np.array(start)
@@ -151,76 +128,52 @@ def findPathAlone(start, end, _scale=10, maxDangerLevel=1):
     return core.pathFind(optMask, _start, _end)
 
 
-# if __name__ == "__main__":
-def main_code(start_list: list, end_list: list, threats: dict = {}):
-    test = []
+def main_code(start_list: list, end_list: list, threats: dict = None):
     # make new finder class
     _finder = finder("pocmap.png")
     # load new map data
-    _finder.newData(threats)
-    # set the from and too for a given path
-    # format: [x1, y1], [x2, y2]
-    # arr = np.array([[-743000, -100000], [743000, -100000]])
+    if threats is not None:
+        _finder.newData(threats)
+    elif _finder.mask is None:
+        # error
+        return [[0, 0], [0, 0]]
     arr = np.array([start_list, end_list])
-    # call this when ever you want to find a path
     cordX, cordY, path = _finder.findPathCord(arr, _show=False, _logging=False)
-
     if cordY is None:
         return [[0, 0], [0, 0]]
-
-    # ignore path
-    # for x in tqdm(range(30), desc="Path finding"):
-    #     arr = np.array([[-743000, -100000], [743000, -100000]])
-    #     test.append([_finder.findPathCord(arr, _show=False, _logging=False)])
-
-    # for x in tqdm(range(30), desc="Path finding pix"):
-    #     # _finder.findPathPix((1265, 217), (1160, 746))
-    #     # worst case max dist
-    #     _finder.findPathPix((347, 0), (2194, 347))
-
-    # for x in tqdm(range(30), desc="Path finding cord"):
-    #     # worst case max dist
-    #     arr = np.array([[-743000, -100000], [743000, -100000]])
-    #     _finder.findPathCord(arr, _show=False, _logging=False)
     return [cordX, cordY]
 
 
 def main_loop():
-
     lua_message = lua_message_class.LuaMessage()
-    lua_exe = lua_message_class.LuaExe()
     soc = socketserver.TCPServer(("localhost", 3015), lua_message.handle)
     soc.allow_reuse_address = True
     soc.request_queue_size = 10
-    soc.timeout = 0.15
+    soc.timeout = 0.45
 
     while True:
-        # check socket for incoming data stream
-        soc.handle_request()
-
+        # check for data to be returned
+        if len(lua_message.request_stack) > 0:
+            host = "localhost"  # The server's hostname or IP address
+            port = 3025  # The port used by the server
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.029)
+                if s.connect_ex((host, port)) < 1:
+                    s.sendall(bytes(json.dumps(lua_message.request_stack.pop()), "utf-8"))
+                    print("Data returned to Lua")
+                    continue
+                else:
+                    continue
         # check for cached proc requests
-        # already json decoded and ready to proc_func
         if lua_message.is_empty() is not True:
             path_req, picture, idx = lua_message.proc()
             if path_req is not None:
                 path = main_code(path_req[0], path_req[1], picture)
-                print(f"msg proc: {path_req}")
                 if path:
-                    lua_exe.request_stack.append(lua_exe.request_data(path, idx))
-                    print(f"msg ready: {path}")
-
-        elif len(lua_exe.request_stack) > 0:
-            try:
-                lua_exe.handle()
-            except TimeoutError:
-                pass
-            except ConnectionResetError:
-                print(ConnectionResetError)
-            except ConnectionAbortedError:
-                print(ConnectionAbortedError)
-
+                    lua_message.request_stack.append(lua_message.request_data(path, idx))
+                    print(f"Total calculation and return time {time.time() - lua_message.perf_counter} for Skynet{idx}")
         else:
-            lua_exe.reset_connection()
+            soc.handle_request()
 
 
 main_loop()
