@@ -123,13 +123,14 @@ if __name__ == "__main__":
     # set the from and too for a given path
     # format: [x1, y1], [x2, y2]
 
+    arr = np.array([[-343000, 0], [0, 0]])
     arr = np.array([[-743000, -100000], [743000, -100000]])
     # call this when ever you want to find a path
     _finder.findPathCord(arr, _show=True, _logging=True)
-
+    exit(0)
     arr = np.array([_data['from'][::-1], _data['to'][::-1]])
     # call this when ever you want to find a path
-    _finder.findPathCord(arr, _show=True, _logging=True)
+    _finder.findPathCord(arr, _show=True, _logging=False)
 
     # ignore path
     # for x in tqdm(range(30), desc="Path finding"):

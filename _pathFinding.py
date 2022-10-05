@@ -1,3 +1,4 @@
+import json
 import math
 
 import numpy as np
@@ -14,10 +15,9 @@ def pathFind(start, goal, grid, pathFinder, trackSteps=False):
 
     return route, found
 
-
-
 def heuristic(a, b):
     return np.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
+    # return abs(b[0] - a[0]) + abs(b[1] - a[1])
 
 def astar(array, start, goal):
     neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
@@ -37,13 +37,14 @@ def astar(array, start, goal):
             while current in came_from:
                 data.append(current)
                 current = came_from[current]
+
             return data, True
 
 
         close_set.add(current)
         for i, j in neighbors:
             neighbor = current[0] + i, current[1] + j
-            tentative_g_score = gscore[current] + heuristic(current, neighbor)
+            tentative_g_score = gscore[current] + 1
             if 0 <= neighbor[0] < array.shape[0]:
                 if 0 <= neighbor[1] < array.shape[1]:
                     if array[neighbor[0]][neighbor[1]] == 1:
