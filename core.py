@@ -1,6 +1,6 @@
 import time
 
-import matplotlib
+# import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
@@ -10,7 +10,7 @@ import json
 from numba import jit, prange
 
 import _pathFinding
-import cv2
+# import cv2
 
 
 def NormalizeData(data, scale=255):

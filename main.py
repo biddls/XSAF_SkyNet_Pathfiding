@@ -172,4 +172,9 @@ def main_loop():
             soc.handle_request()
 
 
-main_loop()
+if __name__ == '__main__':
+    try:
+        main_loop()
+    except BaseException as e:
+        print(e)
+        input()

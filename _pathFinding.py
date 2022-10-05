@@ -2,8 +2,8 @@ import math
 
 import numpy as np
 import heapq
-import matplotlib.pyplot as plt
-from numba import jit
+# import matplotlib.pyplot as plt
+# from numba import jit
 
 def pathFind(start, goal, grid, pathFinder, trackSteps=False):
     route, steps = astar(grid, start, goal, trackSteps)
