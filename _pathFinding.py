@@ -6,6 +6,7 @@ import heapq
 import matplotlib.pyplot as plt
 from numba import jit
 
+
 def pathFind(start, goal, grid, pathFinder, trackSteps=False):
     route, found = pathFinder(grid, start, goal)
     if found is False:
@@ -15,9 +16,11 @@ def pathFind(start, goal, grid, pathFinder, trackSteps=False):
 
     return route, found
 
+
 def heuristic(a, b):
     return np.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
     # return abs(b[0] - a[0]) + abs(b[1] - a[1])
+
 
 def astar(array, start, goal):
     neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
@@ -40,7 +43,6 @@ def astar(array, start, goal):
 
             return data, True
 
-
         close_set.add(current)
         for i, j in neighbors:
             neighbor = current[0] + i, current[1] + j
@@ -59,7 +61,7 @@ def astar(array, start, goal):
             if tentative_g_score < gscore.get(neighbor, 0) or neighbor not in [i[1] for i in oheap]:
                 came_from[neighbor] = current
                 gscore[neighbor] = tentative_g_score
-                fscore[neighbor] = tentative_g_score + heuristic(neighbor, goal)
+                fscore[neighbor] = tentative_g_score + 1  # heuristic(neighbor, goal)
                 heapq.heappush(oheap, (fscore[neighbor], neighbor))
 
     return [], False

@@ -1,7 +1,6 @@
 import numpy as np
 from numba import jit
 import _pathFinding
-import cv2
 
 
 @jit(nopython=True, nogil=True)
@@ -45,5 +44,4 @@ def compressPath(points):
 
 
 def pathFind(_mask, _start, _end, maxDangerLevel=0, logging=False):
-    # _mask > maxDangerLevel
     return _pathFinding.pathFind(_start, _end[::-1], _mask > maxDangerLevel, _pathFinding.astar, trackSteps=logging)
