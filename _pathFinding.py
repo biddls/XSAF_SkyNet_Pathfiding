@@ -1,32 +1,25 @@
+import json
 import math
 
 import numpy as np
 import heapq
-# import matplotlib.pyplot as plt
-# from numba import jit
+import matplotlib.pyplot as plt
+from numba import jit
 
 def pathFind(start, goal, grid, pathFinder, trackSteps=False):
-    route, steps = astar(grid, start, goal, trackSteps)
-    if isinstance(route, bool):
-        return False, None, None
+    route, found = pathFinder(grid, start, goal)
+    if found is False:
+        route = ([start] + [goal])
+    else:
+        route = (route + [start])[::-1]
 
-    route = (route + [start])[::-1]
-
-    # extract x and y coordinates from route list
-    x_coords = []
-    y_coords = []
-    for i in (range(0, len(route))):
-        x_coords.append(route[i][0])
-        y_coords.append(route[i][1])
-
-    return x_coords, y_coords, steps
-
+    return route, found
 
 def heuristic(a, b):
     return np.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
+    # return abs(b[0] - a[0]) + abs(b[1] - a[1])
 
-
-def astar(array, start, goal, trackSteps):
+def astar(array, start, goal):
     neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
 
     close_set = set()
@@ -35,25 +28,26 @@ def astar(array, start, goal, trackSteps):
     fscore = {start: heuristic(start, goal)}
     oheap = []
     heapq.heappush(oheap, (fscore[start], start))
-    steps = []
     while oheap:
         current = heapq.heappop(oheap)[1]
 
-        if current == (goal[1], goal[0]):
+        if current == goal:
             data = []
 
             while current in came_from:
                 data.append(current)
                 current = came_from[current]
-            return data, steps
+
+            return data, True
+
 
         close_set.add(current)
         for i, j in neighbors:
-            neighbor = (current[0] + i), (current[1] + j)
-            tentative_g_score = gscore[current] + heuristic(current, neighbor)
-            if 0 <= neighbor[1]/10 < array.shape[0]:
-                if 0 <= neighbor[0]/10 < array.shape[1]:
-                    if array[math.floor(neighbor[1]/10)][math.floor(neighbor[0]/10)] == 1:
+            neighbor = current[0] + i, current[1] + j
+            tentative_g_score = gscore[current] + 1
+            if 0 <= neighbor[0] < array.shape[0]:
+                if 0 <= neighbor[1] < array.shape[1]:
+                    if array[neighbor[0]][neighbor[1]] == 1:
                         continue
                 else:
                     continue
@@ -65,9 +59,7 @@ def astar(array, start, goal, trackSteps):
             if tentative_g_score < gscore.get(neighbor, 0) or neighbor not in [i[1] for i in oheap]:
                 came_from[neighbor] = current
                 gscore[neighbor] = tentative_g_score
-                fscore[neighbor] = tentative_g_score + heuristic(neighbor, (goal[1], goal[0]))
+                fscore[neighbor] = tentative_g_score + heuristic(neighbor, goal)
                 heapq.heappush(oheap, (fscore[neighbor], neighbor))
-            if trackSteps:
-                steps.append(neighbor)
 
-    return False, None
+    return [], False
