@@ -53,62 +53,57 @@ class finder:
         _start = _arr[0] * self.scale
         _end = _arr[1] * self.scale
 
-        # points = []
-        if found is False:
-            print("NO PATH")
-            x_coords = _start[0], _end[0]
-            y_coords = _start[1], _end[1]
-            # return False, None, None
-        else:
+        if found:
             # extract x and y coordinates from route list
             route = np.array(route)
 
             # optimise path
-            points = list(core.compressPath(route))
+            points1 = np.array(list(core.compressPath(route)))
+            points = np.array(list(core.CompressPath2(points1, maxSkip=2)))
+            points = np.array(list(core.CompressPath3(points, self.optMask)))
+            for x in points:
+                print(x)
 
             # scale up path
-            x_coords = route[:, 0] * self.scale
-            y_coords = route[:, 1] * self.scale
+            x_coords = points[:, 0] * self.scale
+            y_coords = points[:, 1] * self.scale
+            # scale up path
+            x_coords1 = points1[:, 0] * self.scale
+            y_coords1 = points1[:, 1] * self.scale
 
-            coords_len = len(x_coords)
             if _logging:
+                coords_len = len(route)
                 print("It took {:.3f} seconds to complete the path finding".format(time.time() - _logging))
                 print("Number of nodes reduced\n{} -> {}\nThats a compression ratio of {}%"
                       .format(coords_len, len(points), int(100 * (coords_len - len(points)) / coords_len)))
 
-        if not _show:
-            return x_coords, y_coords
+            if not _show:
+                return x_coords, y_coords
 
-        fig, ax = plt.subplots(2)
+        fig, ax = plt.subplots(1)
 
-        ax[0].imshow(self.mapImg)
+        ax.imshow(self.mapImg)
 
         alphas = np.clip(np.abs(self.mask), 0, 1)
 
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue", "red"])
 
-        c = ax[0].pcolormesh(self.mask, cmap=cmap, vmin=-1, vmax=1, rasterized=True, alpha=alphas)
-        plt.colorbar(c, ax=ax[0])
+        c = ax.pcolormesh(self.mask, cmap=cmap, vmin=-1, vmax=1, rasterized=True, alpha=alphas)
+        plt.colorbar(c, ax=ax)
+        ax.contour(self.mask, levels=[-.0001, .0001], colors='green', linestyles='dashed', linewidths=1)
 
-        ax[0].contour(self.mask, levels=[-.0001, .0001], colors='green', linestyles='dashed', linewidths=1)
-
-        ax[1].imshow(self.mask > maxDangerLevel)
-
-        ax[0].scatter(_start[0], _start[1], marker="*", color="blue", s=200)
-        ax[1].scatter(_start[0], _start[1], marker="*", color="blue", s=200)
-
-        ax[0].scatter(_end[0], _end[1], marker="*", color="red", s=200)
-        ax[1].scatter(_end[0], _end[1], marker="*", color="red", s=200)
+        ax.scatter(_start[0], _start[1], marker="*", color="blue", s=200)
+        ax.scatter(_end[0], _end[1], marker="*", color="red", s=200)
 
         if found:
-            ax[0].plot(y_coords, x_coords, color="black")
-            ax[1].plot(y_coords, x_coords, color="black")
+            ax.plot(y_coords1, x_coords1, color="white")
+            ax.plot(y_coords, x_coords, color="black")
 
         # plt.savefig('map.png', dpi=1000)
 
         plt.show()
 
-        return x_coords, y_coords
+        return [_start, _end]
 
 
 if __name__ == "__main__":
@@ -124,7 +119,7 @@ if __name__ == "__main__":
     # format: [x1, y1], [x2, y2]
 
     arr = np.array([[-343000, 0], [0, 0]])
-    arr = np.array([[-743000, -100000], [743000, -100000]])
+    # arr = np.array([[-743000, -100000], [743000, -100000]])
     # call this when ever you want to find a path
     _finder.findPathCord(arr, _show=True, _logging=True)
     exit(0)
