@@ -7,6 +7,7 @@ from tqdm import tqdm
 from matplotlib import image as mpimg, pyplot as plt
 import core
 import numpy as np
+from slpp import slpp as lua
 
 
 class finder:
@@ -19,18 +20,20 @@ class finder:
             self.newData(_file)
 
     def newData(self, _threats, _logging=False):
+        if len(_threats.keys()) == 0:
+            return
         _shape = self.mapImg.shape
         _mask = np.zeros(_shape[:2], dtype=np.float64)
         Y, X = np.ogrid[:_shape[0], :_shape[1]]
 
         _start = time.time()
-        for _objKey in _threats.keys():
-            _obj = [_threats[_objKey]['y'], -_threats[_objKey]['x'], _threats[_objKey]['size']]
-            _obj[0] = np.interp([_obj[0]], (-745556, 744878), (0, 2200)).astype(int)[0]
-            _obj[1] = np.interp([_obj[1]], (-244922, 339322), (0, 866)).astype(int)[0]
+        for _objKey in _threats.values():
+            _obj = list(_objKey.values())
+            _obj[0] = np.interp([-_obj[0]], (-244922, 339322), (0, 866)).astype(int)[0]
+            _obj[1] = np.interp([_obj[1]], (-745556, 744878), (0, 2200)).astype(int)[0]
             _obj[2] = int(_obj[2] * 0.0014972)
             # print(_obj, [_threats[_objKey]['y'], -_threats[_objKey]['x'], _threats[_objKey]['size']])
-            _mask += core.create_circular_mask(Y, X, *_obj[:2], _obj[2], 1)
+            _mask += core.create_circular_mask(Y, X, *_obj)
 
         if _logging:
             print("It took {:.3f} seconds to complete create_circular_mask".format(time.time() - _start))
@@ -41,7 +44,6 @@ class finder:
     def findPathCord(self, _arr, _show=False, _logging=False, maxDangerLevel=0):
         _logging = time.time() if _logging else _logging
 
-        # y1, y2, x1, x2 = -745556, 744878, -339322, 244922
         _arr[:, 0] = np.divide(np.clip(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), 0, 2200-1), self.scale)
         _arr[:, 1] = np.divide(np.clip(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), 0, 866-1), self.scale)
 
@@ -61,8 +63,6 @@ class finder:
             points1 = np.array(list(core.compressPath(route)))
             points = np.array(list(core.CompressPath2(points1, maxSkip=2)))
             points = np.array(list(core.CompressPath3(points, self.optMask)))
-            for x in points:
-                print(x)
 
             # scale up path
             x_coords = points[:, 0] * self.scale
@@ -90,7 +90,7 @@ class finder:
 
         c = ax.pcolormesh(self.mask, cmap=cmap, vmin=-1, vmax=1, rasterized=True, alpha=alphas)
         plt.colorbar(c, ax=ax)
-        ax.contour(self.mask, levels=[-.0001, .0001], colors='green', linestyles='dashed', linewidths=1)
+        ax.contour(self.mask, levels=[-.0001, .0001], colors='green', linestyles='dashed', linewidths=2)
 
         ax.scatter(_start[0], _start[1], marker="*", color="blue", s=200)
         ax.scatter(_end[0], _end[1], marker="*", color="red", s=200)
@@ -110,16 +110,23 @@ if __name__ == "__main__":
     # make new finder class
     _finder = finder("pocmap.png")
     # load new map data
-    with open("test.lua") as f:
-        _data = json.load(f)['msg']
+    with open("test_data.lua") as f:
+        _data = f.read()
+    _data = lua.decode(_data[6:])
 
-    _threats = _data['threats']
-    _finder.newData(_threats)
-    # set the from and too for a given path
-    # format: [x1, y1], [x2, y2]
+    if "from" and "to" in _data.keys():
+        _from, _to = _data["from"], _data["to"]
+        del _data["from"]
+        del _data["to"]
+        raise ValueError("Still need to implement this", _from, _to)
+        arr = np.array([[0,0], [0,0]])
+    else:
+        # set the from and too for a given path
+        # format: [x1, y1], [x2, y2]
+        # arr = np.array([[-343000, 0], [0, 0]])
+        arr = np.array([[-743000, -100000], [743000, -100000]])
+    _finder.newData(_data)
 
-    arr = np.array([[-343000, 0], [0, 0]])
-    # arr = np.array([[-743000, -100000], [743000, -100000]])
     # call this when ever you want to find a path
     _finder.findPathCord(arr, _show=True, _logging=True)
     exit(0)

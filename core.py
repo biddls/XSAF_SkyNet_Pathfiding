@@ -9,7 +9,7 @@ import ast
 
 
 @jit(nopython=True, nogil=True)
-def create_circular_mask(_Y, _X, x, y, radius, strength):
+def create_circular_mask(_Y, _X, y, x, radius, strength):
     dist_from_center = np.clip((radius - np.sqrt(((x - _X) ** 2) + ((y - _Y) ** 2))) / radius, 0, radius)
     # dist_from_center[dist_from_center < 0] = 0
     return strength * dist_from_center
