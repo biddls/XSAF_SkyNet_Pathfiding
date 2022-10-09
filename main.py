@@ -23,7 +23,7 @@ class finder:
         if len(_threats.keys()) == 0:
             return
         _shape = self.mapImg.shape
-        _mask = np.zeros(_shape[:2], dtype=np.float64)
+        _mask = np.zeros(_shape[:2], dtype=np.float32)
         Y, X = np.ogrid[:_shape[0], :_shape[1]]
 
         _start = time.time()
@@ -39,13 +39,13 @@ class finder:
             print("It took {:.3f} seconds to complete create_circular_mask".format(time.time() - _start))
         self.mask = _mask
         self.optMask = cv2.resize(_mask, dsize=(round(_mask.shape[1] / self.scale), round(_mask.shape[0] / self.scale)),
-                  interpolation=cv2.INTER_NEAREST)
+                                  interpolation=cv2.INTER_NEAREST)
 
     def findPathCord(self, _arr, _show=False, _logging=False, maxDangerLevel=0):
         _logging = time.time() if _logging else _logging
 
-        _arr[:, 0] = np.divide(np.clip(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), 0, 2200-1), self.scale)
-        _arr[:, 1] = np.divide(np.clip(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), 0, 866-1), self.scale)
+        _arr[:, 0] = np.divide(np.clip(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), 0, 2200 - 1), self.scale)
+        _arr[:, 1] = np.divide(np.clip(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), 0, 866 - 1), self.scale)
 
         _start = tuple(list(_arr[0].astype(int)))
         _end = tuple(list(_arr[1].astype(int)))
@@ -119,12 +119,13 @@ if __name__ == "__main__":
         del _data["from"]
         del _data["to"]
         raise ValueError("Still need to implement this", _from, _to)
-        arr = np.array([[0,0], [0,0]])
+        arr = np.array([[0, 0], [0, 0]])
     else:
         # set the from and too for a given path
         # format: [x1, y1], [x2, y2]
         # arr = np.array([[-343000, 0], [0, 0]])
         arr = np.array([[-743000, -100000], [743000, -100000]])
+        arr = np.array([[-300000, 240000], [743000, -100000]])
     _finder.newData(_data)
 
     # call this when ever you want to find a path

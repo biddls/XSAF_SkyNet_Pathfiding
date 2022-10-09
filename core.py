@@ -1,4 +1,5 @@
 import json
+import timeit
 
 import numpy as np
 from numba import jit
@@ -70,15 +71,19 @@ def CompressPath3(points, mask):
     yield points[-1]
 
 
+# 4 seconds to do 1_000_000 slices
 def _slice(p1, p2, arr):
     y1, y2, x1, x2 = min(p2[0], p1[0]), max(p2[0], p1[0]), min(p2[1], p1[1]), max(p2[1], p1[1])
-    # temp = np.random.randint(0, 10, arr.shape)
-    # temp = np.triu(temp)
-    # fig, ax = plt.subplots(2)
-    # ax[0].imshow(temp)
-    # ax[1].imshow(arr)
-    # plt.show()
     return arr[y1:1 + y2, x1:1 + x2].sum()
 
 def pathFind(_mask, _start, _end, maxDangerLevel=0, logging=False):
+    # from timeit import default_timer as timer
+    # itters = 100
+    # start = timer()
+    #
+    # for x in range(itters):
+    #     _pathFinding.pathFind(_start, _end[::-1], _mask, _pathFinding.biddlsPhonk, trackSteps=logging)
+    #
+    # print(round((timer() - start)/itters, 4))
     return _pathFinding.pathFind(_start, _end[::-1], _mask > maxDangerLevel, _pathFinding.astar, trackSteps=logging)
+    # return _pathFinding.pathFind(_start, _end[::-1], _mask, _pathFinding.biddlsPhonk, trackSteps=logging)
