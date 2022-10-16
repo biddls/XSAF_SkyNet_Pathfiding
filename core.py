@@ -1,12 +1,6 @@
-import json
-import timeit
-
 import numpy as np
 from numba import jit
 import _pathFinding
-from matplotlib import pyplot as plt
-import matplotlib.patches as patches
-import ast
 
 
 @jit(nopython=True, nogil=True)
@@ -33,7 +27,7 @@ def compressPath(points):
 
 def CompressPath2(points, maxSkip=3):
     yield points[0]
-    sub = lambda x1, y1, x2, y2: maxSkip >= x1-x2 >= -maxSkip and maxSkip >= y1-y2 >= -maxSkip
+    sub = lambda x1, y1, x2, y2: maxSkip >= x1 - x2 >= -maxSkip and maxSkip >= y1 - y2 >= -maxSkip
     for a, b, c, d in zip(points, points[1:], points[2:], points[3:]):
         if not sub(*a, *b):
             yield b
@@ -42,6 +36,7 @@ def CompressPath2(points, maxSkip=3):
             yield b
     yield points[-2]
     yield points[-1]
+
 
 def CompressPath3(points, mask):
     points = list(points)
@@ -76,14 +71,46 @@ def _slice(p1, p2, arr):
     y1, y2, x1, x2 = min(p2[0], p1[0]), max(p2[0], p1[0]), min(p2[1], p1[1]), max(p2[1], p1[1])
     return arr[y1:1 + y2, x1:1 + x2].sum()
 
-def pathFind(_mask, _start, _end, maxDangerLevel=0, logging=False):
+
+def pathFind(_mask, _start, _end, maxDangerLevel=1, logging=False):
     # from timeit import default_timer as timer
     # itters = 100
     # start = timer()
     #
     # for x in range(itters):
-    #     _pathFinding.pathFind(_start, _end[::-1], _mask, _pathFinding.biddlsPhonk, trackSteps=logging)
+    #     _pathFinding.pathFind(_start, _end[::-1], _mask, _pathFinding.biddlsPhonk, maxDangerLevel, False)
     #
     # print(round((timer() - start)/itters, 4))
-    return _pathFinding.pathFind(_start, _end[::-1], _mask > maxDangerLevel, _pathFinding.astar, trackSteps=logging)
-    # return _pathFinding.pathFind(_start, _end[::-1], _mask, _pathFinding.biddlsPhonk, trackSteps=logging)
+    return _pathFinding.pathFind(_start, _end[::-1], _mask, _pathFinding.biddlsPhonk, maxDangerLevel, False)
+
+
+def cord_to_pix(_arr, _scale):
+    _arr[:, 0] = np.divide(np.clip(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), 0, 2200 - 1), _scale)
+    _arr[:, 1] = np.divide(np.clip(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), 0, 866 - 1), _scale)
+
+    return _arr
+
+
+def pix_to_cord(_arr, _scale):
+    _arr[:, 0] = np.interp(np.multiply(_arr[:, 0], _scale), (2200, 0), (-745556, 744878))
+    _arr[:, 1] = np.interp(np.multiply(_arr[:, 1], _scale), (866, 0), (-339322, 244922))
+
+    return _arr
+
+if __name__ == "__main__":
+    def test(_arr):
+        eq = np.array_equal(pix_to_cord(cord_to_pix(_arr.copy(), 10), 10), _arr)
+        if not eq:
+            print("""error:\n"""
+                f"""in {_arr}\n"""
+                f"""cord to pix {cord_to_pix(_arr, 10)}\n"""
+                f"""pix to cord {pix_to_cord(cord_to_pix(_arr, 10), 10)}""")
+
+
+    arr = [np.array([[-343000, 0], [0, 0]]),
+    np.array([[-743000, -100000], [743000, -100000]]),
+    np.array([[-300000, 240000], [743000, -100000]]),
+    np.array([[-260000, -55000], [743000, -100000]])]
+
+    for x in arr:
+        test(x)

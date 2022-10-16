@@ -44,8 +44,7 @@ class finder:
     def findPathCord(self, _arr, _show=False, _logging=False, maxDangerLevel=0):
         _logging = time.time() if _logging else _logging
 
-        _arr[:, 0] = np.divide(np.clip(np.interp(_arr[:, 0], (-745556, 744878), (0, 2200)), 0, 2200 - 1), self.scale)
-        _arr[:, 1] = np.divide(np.clip(np.interp(_arr[:, 1], (-339322, 244922), (0, 866)), 0, 866 - 1), self.scale)
+        _arr = core.cord_to_pix(_arr, self.scale)
 
         _start = tuple(list(_arr[0].astype(int)))
         _end = tuple(list(_arr[1].astype(int)))
@@ -126,6 +125,7 @@ if __name__ == "__main__":
         # arr = np.array([[-343000, 0], [0, 0]])
         arr = np.array([[-743000, -100000], [743000, -100000]])
         arr = np.array([[-300000, 240000], [743000, -100000]])
+        arr = np.array([[-260000, -55000], [743000, -100000]])
     _finder.newData(_data)
 
     # call this when ever you want to find a path
