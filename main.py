@@ -8,6 +8,7 @@ from matplotlib import image as mpimg, pyplot as plt
 import core
 import numpy as np
 from slpp import slpp as lua
+import os
 
 
 class finder:
@@ -19,6 +20,12 @@ class finder:
         if _file is not None:
             self.newData(_file)
 
+        if os.path.exists("config.json"):
+            with open("config.json", "r") as f:
+                self.config = json.load(f)
+        else:
+            raise FileNotFoundError("config.json not found")
+
     def newData(self, _threats, _logging=False):
         if len(_threats.keys()) == 0:
             return
@@ -29,9 +36,9 @@ class finder:
         _start = time.time()
         for _objKey in _threats.values():
             _obj = list(_objKey.values())
-            _obj[0] = np.interp([-_obj[0]], (-244922, 339322), (0, 866)).astype(int)[0]
-            _obj[1] = np.interp([_obj[1]], (-745556, 744878), (0, 2200)).astype(int)[0]
-            _obj[2] = int(_obj[2] * 0.0014972)
+            _obj[0] = np.interp([-_obj[0]], (self.config["y"]), (0, self.config["h"])).astype(int)[0]
+            _obj[1] = np.interp([_obj[1]], (self.config["x"]), (0, self.config["w"])).astype(int)[0]
+            _obj[2] = int(_obj[2] * self.config["scale"])
             # print(_obj, [_threats[_objKey]['y'], -_threats[_objKey]['x'], _threats[_objKey]['size']])
             _mask += core.create_circular_mask(Y, X, *_obj)
 
